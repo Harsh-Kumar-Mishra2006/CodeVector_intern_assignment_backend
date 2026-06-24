@@ -1,6 +1,6 @@
 # Product Catalog Backend
 
-A backend service built with Node.js, Express, and TiDB Cloud that supports browsing a large catalog of products with efficient filtering and cursor-based pagination.
+A backend service built with Node.js, Express, MySQL and TiDB Cloud that supports browsing a large catalog of products with efficient filtering and cursor-based pagination.
 
 ## Overview
 
@@ -10,7 +10,7 @@ The system generates and stores 200,000 products and provides APIs to:
 
 - Browse products sorted by newest first
 - Filter products by category
-- Paginate efficiently through large datasets
+- Paginate efficiently through large datasets in Batches of 20 Products
 - Handle continuously changing data without showing duplicate or missing products
 
 ---
@@ -29,25 +29,22 @@ The system generates and stores 200,000 products and provides APIs to:
 
 ### Products Table
 
-| Column     | Type                                  |
-| ---------- | ------------------------------------- |
-| id         | BIGINT/INT AUTO_INCREMENT PRIMARY KEY |
-| name       | VARCHAR(255)                          |
-| category   | VARCHAR(100)                          |
-| price      | DECIMAL(10,2)                         |
-| created_at | TIMESTAMP                             |
-| updated_at | TIMESTAMP                             |
+| Column     | Type                                                            |
+| ---------- | --------------------------------------------------------------- |
+| id         | INT AUTO_INCREMENT PRIMARY KEY                                  |
+| name       | VARCHAR(255) NOT NULL                                           |
+| category   | VARCHAR(100) NOT NULL                                           |
+| price      | DECIMAL(10, 2) NOT NULL                                         |
+| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP                             |
+| updated_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP |
 
 ---
 
 ## Database Indexes
 
 ```sql
-CREATE INDEX idx_created_id
-ON products(created_at DESC, id DESC);
-
-CREATE INDEX idx_category_created_id
-ON products(category, created_at DESC, id DESC);
+INDEX idx_category (category),
+INDEX idx_created_at (created_at)
 ```
 
 These indexes help optimize sorting and cursor-based pagination queries.
@@ -71,7 +68,7 @@ Data is inserted in batches to improve performance and reduce database round tri
 ### Run Seed Script
 
 ```bash
-npm run seed
+npm seed.js
 ```
 
 ---
@@ -80,37 +77,43 @@ npm run seed
 
 ### Get Products
 
-```http
+```bash
 GET /api/products
 ```
 
 ### Query Parameters
 
-| Parameter       | Description                 |
-| --------------- | --------------------------- |
-| limit           | Number of products per page |
-| category        | Filter by category          |
-| cursorCreatedAt | Cursor timestamp            |
-| cursorId        | Cursor product ID           |
+| Parameter         | Type     | Required | Description                   | Default |
+| ----------------- | -------- | -------- | ----------------------------- | ------- |
+| `category`        | string   | ❌       | Filter products by category   | None    |
+| `limit`           | integer  | ❌       | Number of products per page   | 20      |
+| `cursorCreatedAt` | datetime | ❌       | ISO timestamp of last product | None    |
+| `cursorId`        | integer  | ❌       | ID of last product            | None    |
 
 ### Examples
 
 #### First Page
 
-```http
+```bash
 GET /api/products?limit=20
-```
-
-#### Filter by Category
-
-```http
-GET /api/products?category=Electronics&limit=20
 ```
 
 #### Next Page
 
-```http
-GET /api/products?limit=20&cursorCreatedAt=2026-06-23T10:15:30.000Z&cursorId=5432
+```bash
+GET /api/products?limit=20&cursorCreatedAt=2026-06-23T14:00:00.000Z&cursorId=131
+```
+
+#### Filter by Category
+
+```bash
+GET /api/products?category=Electronics&limit=10
+```
+
+#### Category + Pagination
+
+```bash
+GET /api/products?category=Electronics&cursorCreatedAt=2026-06-23T14:00:00.000Z&cursorId=131&limit=20
 ```
 
 ---
@@ -121,18 +124,14 @@ GET /api/products?limit=20&cursorCreatedAt=2026-06-23T10:15:30.000Z&cursorId=543
 {
   "products": [
     {
-      "id": 123,
-      "name": "Ergonomic Steel Keyboard",
-      "category": "Electronics",
-      "price": 2999,
-      "created_at": "2026-06-23T10:20:00.000Z",
-      "updated_at": "2026-06-23T10:20:00.000Z"
+      "id": 186751,
+      "name": "Intelligent Granite Keyboard",
+      "category": "Toys",
+      "price": 4857.95,
+      "created_at": "2026-06-24T09:00:00.000Z",
+      "updated_at": "2026-06-24T09:00:00.000Z"
     }
-  ],
-  "nextCursor": {
-    "created_at": "2026-06-23T10:15:30.000Z",
-    "id": 5432
-  }
+  ]
 }
 ```
 
@@ -218,8 +217,8 @@ Since each page starts after the last product already seen by the user:
 ### Clone Repository
 
 ```bash
-git clone <repository-url>
-cd product-catalog-backend
+git clone <https://github.com/Harsh-Kumar-Mishra2006/CodeVector_intern_assignment_backend>
+cd CodeVector_Internship_Assignment
 ```
 
 ### Install Dependencies
@@ -233,31 +232,20 @@ npm install
 Create a `.env` file:
 
 ```env
-PORT=5000
+PORT=3000
 
 DB_HOST=
 DB_PORT=
 DB_USER=
 DB_PASSWORD=
 DB_NAME=
+DB_SSL=
 ```
 
 ### Run Application
 
 ```bash
 npm start
-```
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-### Seed Database
-
-```bash
-npm run seed
 ```
 
 ---
@@ -268,37 +256,27 @@ npm run seed
 project/
 │
 ├── config/
-│   └── database.js
+│   └── Database.js
 │
 ├── routes/
-│   └── productRoutes.js
-│
-├── controllers/
-│   └── productController.js
+│   └── Products.js
 │
 ├── scripts/
-│   └── seedProducts.js
-│
-├── middleware/
+│   └── seed.js
 │
 ├── .env
-├── package.json
-└── server.js
+├── app.js
+└── package.json
 ```
 
 ---
 
 ## Future Improvements
 
-Given additional time, I would add:
+For Future improvement purpose, I would add:
 
-- Request validation using Joi/Zod
-- Swagger/OpenAPI documentation
-- Automated testing (Jest)
-- Docker support
-- Redis caching
-- Rate limiting
-- Monitoring and logging
+- Full-text search optimization for product names
+- Rate Limiting
 
 ---
 
@@ -306,9 +284,11 @@ Given additional time, I would add:
 
 AI tools were used for:
 
+- Getting help to add fake data via Faker
+- Working with seed.js file for generating products
 - Reviewing pagination approaches
 - Discussing database indexing strategies
 - Validating cursor pagination logic
 - Improving documentation
 
-All implementation decisions, testing, debugging, and final verification were performed manually.
+---
