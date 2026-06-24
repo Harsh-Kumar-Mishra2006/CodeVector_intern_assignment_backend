@@ -244,7 +244,7 @@ Benefits:
 
 ```bash
 git clone <https://github.com/Harsh-Kumar-Mishra2006/CodeVector_intern_assignment_backend>
-cd CodeVector_Internship_Assignment
+cd CodeVector_intern_assignment_backend
 ```
 
 ### Install Dependencies
