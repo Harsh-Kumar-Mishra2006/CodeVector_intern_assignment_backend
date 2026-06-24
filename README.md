@@ -120,6 +120,8 @@ GET /api/products?category=Electronics&cursorCreatedAt=2026-06-23T14:00:00.000Z&
 
 ## Response Format
 
+#### Success(200 OK)
+
 ```json
 {
   "products": [
@@ -132,6 +134,16 @@ GET /api/products?category=Electronics&cursorCreatedAt=2026-06-23T14:00:00.000Z&
       "updated_at": "2026-06-24T09:00:00.000Z"
     }
   ]
+}
+```
+
+#### Error(500 Server Error)
+
+```json
+{
+  "success": false,
+  "message": "Internal server error",
+  "error": "Database connection failed"
 }
 ```
 
