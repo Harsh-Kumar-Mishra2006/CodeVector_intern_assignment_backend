@@ -147,9 +147,46 @@ GET /api/products?category=Electronics&cursorCreatedAt=2026-06-23T14:00:00.000Z&
 }
 ```
 
+### Get Products
+
+```bash
+GET /categories
+```
+
+## Querry Parameters
+
+None
+
+## Example Request
+
+```bash
+GET /api/categories
+```
+
+### Response
+
+## Success(200 OK)
+
+```json
+{
+  "success": true,
+  "data": [
+    "Automotive",
+    "Books",
+    "Clothing",
+    "Electronics",
+    "Garden",
+    "Home",
+    "Sports",
+    "Toys"
+  ],
+  "count": 8
+}
+```
+
 ---
 
-## Pagination Strategy
+## Key Design Decisions
 
 ### Why Not Offset Pagination?
 
@@ -171,56 +208,33 @@ Problems:
 
 ---
 
-## Cursor-Based Pagination
-
-Products are sorted by:
-
-```sql
-ORDER BY created_at DESC, id DESC
-```
+## Cursor-Based Pagination (using created_at + id)
 
 The last record from the current page becomes the cursor for the next page.
 
-Example query:
-
 ```sql
-SELECT *
-FROM products
+SELECT * FROM products
 WHERE (
-    created_at < ?
-    OR (
-        created_at = ?
-        AND id < ?
-    )
+  created_at < ?
+  OR (created_at = ? AND id < ?)
 )
 ORDER BY created_at DESC, id DESC
-LIMIT ?;
+LIMIT 20;
 ```
 
 Benefits:
 
-- Consistent pagination
-- No duplicate records
-- No skipped records
-- Better performance on large datasets
-- Works correctly when data changes during browsing
+- Always starts from the last seen product
+- Handles ties with id as tie-breaker
+- No duplicates or missed records when data changes
 
 ---
 
-## Handling Data Changes
+## Batch Insert for Seeding
 
-One requirement of the assignment was:
-
-> If new products are added or updated while a user is browsing, they must not see duplicate products or miss products.
-
-This is achieved through cursor-based pagination.
-
-Since each page starts after the last product already seen by the user:
-
-- Newly inserted products appear before the current cursor
-- Previously viewed products are not shown again
-- Existing products are not skipped
-- Pagination remains stable even when data changes
+- 10,000 records per batch
+- Prevents timeout and memory issues
+- Handles 200,000 records in ~30 seconds
 
 ---
 
